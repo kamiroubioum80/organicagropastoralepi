@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Thème nature/agriculture bio avec couleurs vertes et terreuses */
+    --background: 40 20% 97%;
+    --foreground: 140 25% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 140 25% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 140 25% 15%;
+    --primary: 142 71% 35%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 40 35% 88%;
+    --secondary-foreground: 140 25% 15%;
+    --muted: 40 25% 92%;
+    --muted-foreground: 140 15% 45%;
+    --accent: 35 65% 55%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 40 20% 85%;
+    --input: 40 20% 85%;
+    --ring: 142 71% 35%;
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 140 25% 8%;
+    --foreground: 40 20% 95%;
+    --card: 140 20% 12%;
+    --card-foreground: 40 20% 95%;
+    --popover: 140 20% 12%;
+    --popover-foreground: 40 20% 95%;
+    --primary: 142 65% 45%;
+    --primary-foreground: 140 25% 8%;
+    --secondary: 140 15% 20%;
+    --secondary-foreground: 40 20% 95%;
+    --muted: 140 15% 18%;
+    --muted-foreground: 40 15% 65%;
+    --accent: 35 60% 50%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 40 20% 95%;
+    --border: 140 15% 25%;
+    --input: 140 15% 25%;
+    --ring: 142 65% 45%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
