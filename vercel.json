@@ -1,0 +1,22 @@
+{
+  "buildCommand": "pnpm build ^|^| npm run build",
+  "devCommand": "pnpm dev ^|^| npm run dev",
+  "outputDirectory": ".next",
+  "env": {
+    "NEXT_PUBLIC_APP_NAME": "Organic Agropastoral",
+    "NEXT_PUBLIC_APP_URL": "https://organicagropastoralepi.vercel.app"
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {"key": "X-Content-Type-Options", "value": "nosniff"},
+        {"key": "X-Frame-Options", "value": "SAMEORIGIN"},
+        {"key": "X-XSS-Protection", "value": "1; mode=block"},
+        {"key": "Referrer-Policy", "value": "strict-origin-when-cross-origin"},
+        {"key": "Cache-Control", "value": "public, max-age=3600, must-revalidate"}
+      ]
+    }
+  ],
+  "redirects": [{"source": "/index.html", "destination": "/", "permanent": true}]
+}
