@@ -1,4 +1,4 @@
-page-terms-backup.tsx
+
 
 export default function TermsOfService() {
   return (
