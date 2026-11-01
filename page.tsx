@@ -1,5 +1,3 @@
-
-
 export default function TermsOfService() {
   return (
     <div className="min-h-screen bg-background p-8">
