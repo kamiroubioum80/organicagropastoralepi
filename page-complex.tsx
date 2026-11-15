@@ -1,4 +1,6 @@
+
 "use client"
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -21,8 +23,18 @@ import { useState, useEffect } from "react"
 
 export default function ChatBot() {
   const [mounted, setMounted] = useState(false)
-  const { messages, input, isLoading, isAuthenticated, authMessage, sendMessage, handleKeyPress, handleInputChange } =
-    useChatbot()
+
+  const {
+    messages,
+    input,
+    isLoading,
+    isAuthenticated,
+    authMessage,
+    walletAddress,
+    sendMessage,
+    handleKeyPress,
+    handleInputChange,
+  } = useChatbot()
 
   const { bottomRef } = useScrollToBottom([messages])
   const [activeTab, setActiveTab] = useState("chat")
@@ -189,7 +201,7 @@ export default function ChatBot() {
           </TabsContent>
 
           <TabsContent value="wallet" className="space-y-6">
-            <WalletSection />
+            <WalletSection walletAddress={walletAddress} />
           </TabsContent>
 
           <TabsContent value="products" className="space-y-6">
@@ -238,3 +250,4 @@ export default function ChatBot() {
     </div>
   )
 }
+
