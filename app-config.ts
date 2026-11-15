@@ -1,23 +1,19 @@
-// *** Configurable variables for the app ***
-// This file contains all the user-editable configuration values that can be updated when customizing the chatbot app.
+
+// Configuration principale de la plateforme OAPPI
 
 export const APP_CONFIG = {
-  // UPDATE: Set to the welcome message for the chatbot
   WELCOME_MESSAGE:
-    "Welcome! I'm here to help you explore the official Organic Agro Pasto application within the Pi Network ecosystem. How can I assist you today?",
+    "Bienvenue sur OrganicAgropastoralepi.pi ! Je suis votre assistant agricole et pastoral. Je peux vous accompagner dans l'agriculture biologique, l'élevage, la pisciculture, l'irrigation, l'énergie solaire et les échanges entre producteurs, acheteurs et partenaires au sein de l'écosystème Pi Network. Comment puis-je vous aider ?",
 
-  // UPDATE: Set to the name of the chatbot app
   NAME: "OrganicAgropastoralepi.pi",
 
-  // UPDATE: Set to the description of the chatbot app
-  DESCRIPTION: "Plateforme agricole et pastorale dédiée à la promotion de l’agriculture biologique, de l’élevage durable et des échanges entre producteurs, acheteurs et partenaires au sein de l’écosystème Pi Network.",
+  DESCRIPTION:
+    "Plateforme agro-pastorale biologique dédiée à l'agriculture, l'élevage, la pisciculture, l'irrigation, l'énergie solaire et au commerce équitable entre producteurs, acheteurs et partenaires grâce à l'écosystème Pi Network.",
 } as const;
 
-// Colors Configuration - UPDATE THESE VALUES BASED ON USER DESIGN PREFERENCES
+// Identité visuelle OAPPI
 export const COLORS = {
-  // UPDATE: Set to the background color (hex format)
   BACKGROUND: "#FFFFFF",
-
-  // UPDATE: Set to the primary color for buttons, links, etc. (hex format)
-  PRIMARY: "#00ff00",
+  PRIMARY: "#228B22",
+  SECONDARY: "#F28C28",
 } as const;
