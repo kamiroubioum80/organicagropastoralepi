@@ -1,15 +1,25 @@
-import { useEffect, useRef } from "react"
 
-export const useScrollToBottom = <T extends any[]>(dependencies: T) => {
+import { useCallback, useEffect, useRef } from "react"
+
+export const useScrollToBottom = <T extends readonly unknown[]>(
+  dependencies: T,
+) => {
   const bottomRef = useRef<HTMLDivElement>(null)
 
-  const scrollToBottom = () => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" })
-  }
+  const scrollToBottom = useCallback(() => {
+    bottomRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "end",
+    })
+  }, [])
 
   useEffect(() => {
-    scrollToBottom()
-  }, dependencies)
+    const frameId = requestAnimationFrame(() => {
+      scrollToBottom()
+    })
+
+    return () => cancelAnimationFrame(frameId)
+  }, [...dependencies, scrollToBottom])
 
   return { bottomRef, scrollToBottom }
 }
