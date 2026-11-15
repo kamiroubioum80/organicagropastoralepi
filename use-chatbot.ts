@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import type React from "react"
@@ -20,8 +21,12 @@ const createMessage = (
 })
 
 export const useChatbot = () => {
-  const { isAuthenticated, authMessage, piAccessToken } =
-    usePiNetworkAuthentication()
+  const {
+    isAuthenticated,
+    authMessage,
+    piAccessToken,
+    walletAddress,
+  } = usePiNetworkAuthentication()
 
   const [messages, setMessages] = useState<Message[]>([
     createMessage(APP_CONFIG.WELCOME_MESSAGE, "ai", "1"),
@@ -208,6 +213,7 @@ export const useChatbot = () => {
     isLoading,
     isAuthenticated,
     authMessage,
+    walletAddress,
     sendMessage,
     handleKeyPress,
     handleInputChange,
