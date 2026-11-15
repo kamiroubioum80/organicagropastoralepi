@@ -1,57 +1,91 @@
+
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect, useRef } from "react"
 import type { Message } from "@/lib/types"
 import { usePiNetworkAuthentication } from "./use-pi-network-authentication"
 import { APP_CONFIG } from "@/lib/app-config"
 import { BACKEND_URLS } from "@/lib/system-config"
 
-// Helper function to create messages
-const createMessage = (text: Message["text"], sender: Message["sender"], id?: Message["id"]): Message => ({
-  id: id || Date.now().toString(),
+const createMessage = (
+  text: string,
+  sender: Message["sender"],
+  id?: string,
+): Message => ({
+  id: id || `${Date.now()}-${Math.random().toString(36).slice(2)}`,
   text,
   sender,
   timestamp: new Date(),
 })
 
 export const useChatbot = () => {
-  const { isAuthenticated, authMessage, piAccessToken } = usePiNetworkAuthentication()
+  const { isAuthenticated, authMessage, piAccessToken } =
+    usePiNetworkAuthentication()
 
-  const [messages, setMessages] = useState<Message[]>([createMessage(APP_CONFIG.WELCOME_MESSAGE, "ai", "1")])
+  const [messages, setMessages] = useState<Message[]>([
+    createMessage(APP_CONFIG.WELCOME_MESSAGE, "ai", "1"),
+  ])
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const thinkingTimerRef = useRef<NodeJS.Timeout | null>(null)
 
-  const showThinking = () => {
-    const thinkingMessage = createMessage("Réflexion en cours... (0s)", "ai", "thinking")
-    setMessages((prev) => [...prev, thinkingMessage])
-
-    let seconds = 0
-    thinkingTimerRef.current = setInterval(() => {
-      seconds += 1
-      setMessages((prevMessages) =>
-        prevMessages.map((msg) =>
-          msg.id === "thinking" ? { ...msg, text: `Réflexion en cours... (${seconds}s)` } : msg,
-        ),
-      )
-    }, 1000)
-  }
+  const thinkingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const isSendingRef = useRef(false)
+  const mountedRef = useRef(true)
 
   const hideThinking = () => {
-    if (thinkingTimerRef.current) {
+    if (thinkingTimerRef.current !== null) {
       clearInterval(thinkingTimerRef.current)
       thinkingTimerRef.current = null
     }
-    setMessages((prev) => prev.filter((msg) => msg.id !== "thinking"))
+
+    if (mountedRef.current) {
+      setMessages((previous) =>
+        previous.filter((message) => message.id !== "thinking"),
+      )
+    }
+  }
+
+  const showThinking = () => {
+    hideThinking()
+
+    if (!mountedRef.current) return
+
+    setMessages((previous) => [
+      ...previous,
+      createMessage("Réflexion en cours... (0s)", "ai", "thinking"),
+    ])
+
+    let seconds = 0
+
+    thinkingTimerRef.current = setInterval(() => {
+      seconds += 1
+
+      if (mountedRef.current) {
+        setMessages((previous) =>
+          previous.map((message) =>
+            message.id === "thinking"
+              ? {
+                  ...message,
+                  text: `Réflexion en cours... (${seconds}s)`,
+                }
+              : message,
+          ),
+        )
+      }
+    }, 1000)
   }
 
   const sendMessage = async () => {
-    if (!piAccessToken || !input.trim()) return
+    const messageText = input.trim()
 
-    const userMessage = createMessage(input.trim(), "user")
-    setMessages((prev) => [...prev, userMessage])
+    if (!piAccessToken || !messageText || isSendingRef.current) return
+
+    isSendingRef.current = true
+
+    const userMessage = createMessage(messageText, "user")
+
+    setMessages((previous) => [...previous, userMessage])
     setInput("")
     setIsLoading(true)
 
@@ -67,70 +101,116 @@ export const useChatbot = () => {
         body: JSON.stringify({ message: userMessage.text }),
       })
 
+      let data: any
+
+      try {
+        data = await response.json()
+      } catch {
+        throw new Error("Le serveur a renvoyé une réponse illisible.")
+      }
+
       hideThinking()
 
       if (response.status === 429) {
-        const errorData = await response.json()
         const errorMessage = createMessage(
-          errorData.error_type === "daily_limit_exceeded"
+          data?.error_type === "daily_limit_exceeded"
             ? "Limite quotidienne atteinte. Veuillez réessayer demain."
             : "Trop de requêtes. Veuillez patienter un moment.",
           "ai",
         )
-        setMessages((prev) => [...prev, errorMessage])
+
+        setMessages((previous) => [...previous, errorMessage])
         return
       }
 
-      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(
+          data?.message || data?.error || `Erreur serveur : ${response.status}`,
+        )
+      }
 
-      if (data.messages && Array.isArray(data.messages)) {
-        const aiMsg = data.messages.reverse().find((m: any) => m.sender === "ai")
-        const botMessage = createMessage(aiMsg ? aiMsg.text : "Aucune réponse reçue du serveur.", "ai")
-        setMessages((prev) => [...prev, botMessage])
+      if (Array.isArray(data?.messages)) {
+        const aiMessage = [...data.messages]
+          .reverse()
+          .find(
+            (message: any) =>
+              message?.sender === "ai" &&
+              typeof message?.text === "string",
+          )
+
+        setMessages((previous) => [
+          ...previous,
+          createMessage(
+            aiMessage?.text || "Aucune réponse reçue du serveur.",
+            "ai",
+          ),
+        ])
       } else {
-        const errorMessage = createMessage("Aucune réponse du serveur.", "ai")
-        setMessages((prev) => [...prev, errorMessage])
+        setMessages((previous) => [
+          ...previous,
+          createMessage("Aucune réponse exploitable du serveur.", "ai"),
+        ])
       }
     } catch (error) {
       hideThinking()
-      const errorMessage = createMessage("Erreur de connexion au serveur. Vérifiez votre connexion internet.", "ai")
-      setMessages((prev) => [...prev, errorMessage])
+
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Erreur de connexion au serveur."
+
+      if (mountedRef.current) {
+        setMessages((previous) => [
+          ...previous,
+          createMessage(
+            `Impossible de contacter l'assistant : ${errorMessage}`,
+            "ai",
+          ),
+        ])
+      }
     } finally {
-      setIsLoading(false)
+      hideThinking()
+      isSendingRef.current = false
+
+      if (mountedRef.current) {
+        setIsLoading(false)
+      }
     }
   }
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault()
-      sendMessage()
+  const handleKeyPress = (event: React.KeyboardEvent) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault()
+      void sendMessage()
     }
   }
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInput(e.target.value)
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setInput(event.target.value)
   }
 
-  // Cleanup function
   useEffect(() => {
+    mountedRef.current = true
+
     return () => {
-      if (thinkingTimerRef.current) {
+      mountedRef.current = false
+
+      if (thinkingTimerRef.current !== null) {
         clearInterval(thinkingTimerRef.current)
+        thinkingTimerRef.current = null
       }
     }
   }, [])
 
   return {
-    // State
     messages,
     input,
     isLoading,
     isAuthenticated,
     authMessage,
-
-    // Actions
     sendMessage,
     handleKeyPress,
     handleInputChange,
   }
 }
+
