@@ -1,4 +1,4 @@
-app
+APP 
 /page.tsx
 import ChatBot from "../page-complex"
 
