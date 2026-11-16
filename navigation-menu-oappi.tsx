@@ -3,8 +3,8 @@
 import Link from "next/link"
 import { useState } from "react"
 import { Menu, X, Leaf } from "lucide-react"
-import { Button } from "@/components/ui/button"
 
+import { Button } from "@/components/button"
 export function NavigationMenuOAPPi() {
   const [isOpen, setIsOpen] = useState(false)
 
