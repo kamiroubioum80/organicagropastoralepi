@@ -231,4 +231,4 @@ export {
   MenubarSubContent,
   MenubarSubTrigger,
   MenubarGroup,
-  MenubarShortcut.displayName = "MenubarShortcut"
+  MenubarShortcut,
