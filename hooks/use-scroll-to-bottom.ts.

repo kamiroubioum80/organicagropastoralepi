@@ -1,219 +1,25 @@
-"use client"
 
-import type React from "react"
-import { useState, useEffect, useRef } from "react"
-import type { Message } from "@/lib/types"
-import { usePiNetworkAuthentication } from "./use-pi-network-authentication"
-import { APP_CONFIG } from "@/lib/app-config"
-import { BACKEND_URLS } from "@/lib/system-config"
+import { useCallback, useEffect, useRef } from "react"
 
-const createMessage = (
-  text: string,
-  sender: Message["sender"],
-  id?: string,
-): Message => ({
-  id: id || `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-  text,
-  sender,
-  timestamp: new Date(),
-})
+export const useScrollToBottom = <T extends readonly unknown[]>(
+  dependencies: T,
+) => {
+  const bottomRef = useRef<HTMLDivElement>(null)
 
-export const useChatbot = () => {
-  const {
-    isAuthenticated,
-    authMessage,
-    piAccessToken,
-    walletAddress,
-  } = usePiNetworkAuthentication()
-
-  const [messages, setMessages] = useState<Message[]>([
-    createMessage(APP_CONFIG.WELCOME_MESSAGE, "ai", "1"),
-  ])
-  const [input, setInput] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-
-  const thinkingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const isSendingRef = useRef(false)
-  const mountedRef = useRef(true)
-
-  const hideThinking = () => {
-    if (thinkingTimerRef.current !== null) {
-      clearInterval(thinkingTimerRef.current)
-      thinkingTimerRef.current = null
-    }
-
-    if (mountedRef.current) {
-      setMessages((previous) =>
-        previous.filter((message) => message.id !== "thinking"),
-      )
-    }
-  }
-
-  const showThinking = () => {
-    hideThinking()
-
-    if (!mountedRef.current) return
-
-    setMessages((previous) => [
-      ...previous,
-      createMessage("Réflexion en cours... (0s)", "ai", "thinking"),
-    ])
-
-    let seconds = 0
-
-    thinkingTimerRef.current = setInterval(() => {
-      seconds += 1
-
-      if (mountedRef.current) {
-        setMessages((previous) =>
-          previous.map((message) =>
-            message.id === "thinking"
-              ? {
-                  ...message,
-                  text: `Réflexion en cours... (${seconds}s)`,
-                }
-              : message,
-          ),
-        )
-      }
-    }, 1000)
-  }
-
-  const sendMessage = async () => {
-    const messageText = input.trim()
-
-    if (!piAccessToken || !messageText || isSendingRef.current) return
-
-    isSendingRef.current = true
-
-    const userMessage = createMessage(messageText, "user")
-
-    setMessages((previous) => [...previous, userMessage])
-    setInput("")
-    setIsLoading(true)
-
-    showThinking()
-
-    try {
-      const response = await fetch(BACKEND_URLS.CHAT, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: piAccessToken,
-        },
-        body: JSON.stringify({ message: userMessage.text }),
-      })
-
-      let data: any
-
-      try {
-        data = await response.json()
-      } catch {
-        throw new Error("Le serveur a renvoyé une réponse illisible.")
-      }
-
-      hideThinking()
-
-      if (response.status === 429) {
-        const errorMessage = createMessage(
-          data?.error_type === "daily_limit_exceeded"
-            ? "Limite quotidienne atteinte. Veuillez réessayer demain."
-            : "Trop de requêtes. Veuillez patienter un moment.",
-          "ai",
-        )
-
-        setMessages((previous) => [...previous, errorMessage])
-        return
-      }
-
-      if (!response.ok) {
-        throw new Error(
-          data?.message || data?.error || `Erreur serveur : ${response.status}`,
-        )
-      }
-
-      if (Array.isArray(data?.messages)) {
-        const aiMessage = [...data.messages]
-          .reverse()
-          .find(
-            (message: any) =>
-              message?.sender === "ai" &&
-              typeof message?.text === "string",
-          )
-
-        setMessages((previous) => [
-          ...previous,
-          createMessage(
-            aiMessage?.text || "Aucune réponse reçue du serveur.",
-            "ai",
-          ),
-        ])
-      } else {
-        setMessages((previous) => [
-          ...previous,
-          createMessage("Aucune réponse exploitable du serveur.", "ai"),
-        ])
-      }
-    } catch (error) {
-      hideThinking()
-
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Erreur de connexion au serveur."
-
-      if (mountedRef.current) {
-        setMessages((previous) => [
-          ...previous,
-          createMessage(
-            `Impossible de contacter l'assistant : ${errorMessage}`,
-            "ai",
-          ),
-        ])
-      }
-    } finally {
-      hideThinking()
-      isSendingRef.current = false
-
-      if (mountedRef.current) {
-        setIsLoading(false)
-      }
-    }
-  }
-
-  const handleKeyPress = (event: React.KeyboardEvent) => {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault()
-      void sendMessage()
-    }
-  }
-
-  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setInput(event.target.value)
-  }
-
-  useEffect(() => {
-    mountedRef.current = true
-
-    return () => {
-      mountedRef.current = false
-
-      if (thinkingTimerRef.current !== null) {
-        clearInterval(thinkingTimerRef.current)
-        thinkingTimerRef.current = null
-      }
-    }
+  const scrollToBottom = useCallback(() => {
+    bottomRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "end",
+    })
   }, [])
 
-  return {
-    messages,
-    input,
-    isLoading,
-    isAuthenticated,
-    authMessage,
-    walletAddress,
-    sendMessage,
-    handleKeyPress,
-    handleInputChange,
-  }
+  useEffect(() => {
+    const frameId = requestAnimationFrame(() => {
+      scrollToBottom()
+    })
+
+    return () => cancelAnimationFrame(frameId)
+  }, [...dependencies, scrollToBottom])
+
+  return { bottomRef, scrollToBottom }
 }
