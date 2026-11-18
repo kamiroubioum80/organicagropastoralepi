@@ -1,0 +1,6 @@
+/page.tsx
+import ChatBot from "../page-complex"
+
+export default function Home() {
+return <ChatBot />
+}
