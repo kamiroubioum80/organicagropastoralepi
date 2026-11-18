@@ -1,1 +1,3 @@
-app/.gitkeep
+app/
+  .gitkeep
+  layout.tsx
