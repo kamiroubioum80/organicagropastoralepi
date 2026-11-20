@@ -1,4 +1,3 @@
-app-backup.tsx
 /page.tsx
 import ChatBot from "../page-complex"
 
